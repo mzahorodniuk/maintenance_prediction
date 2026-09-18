@@ -1,0 +1,32 @@
+# ---- Python ----
+__pycache__/
+*.pyc
+.venv/
+
+# ---- GHDL / GTKWave build artifacts ----
+# NB: bitstream.bit, design.json and implementation.txt ARE tracked on purpose --
+# they are the shipped build products for the board.
+*.cf
+*.o
+*.ghw
+*.vcd
+*.sav
+top_synth.v
+
+# ---- impl_repro build-dir netlist ----
+# 52 MB. The archived copy under etc/saved_bitsreams/<tag>/placed.json.gz is
+# the one that matters; this is just the working file.
+hardware/fpga/ccgm1a1/placed.json
+
+# ---- regenerated device database dump ----
+# 8 MB, and `nextpnr-himbaechel --device CCGM1A1 --run figures/dump_fabric.py`
+# rebuilds it in seconds. Archived builds ARE tracked (see etc/saved_bitsreams),
+# but placed.json is stored gzipped there -- 52 MB expanded, 4 MB packed.
+figures/data/gatemate_fabric.tsv
+
+# ---- Prometheus runtime data ----
+software_infrastructure/Prometheus/data/
+pp12/
+
+# ---- macOS Finder junk ----
+.DS_Store

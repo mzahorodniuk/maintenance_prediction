@@ -1,0 +1,8 @@
+# CPU-only PyTorch build (see install note below)
+# install with:
+#   pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cpu
+torch
+numpy
+scipy
+matplotlib
+tqdm

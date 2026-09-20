@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 import torch
 from tqdm import tqdm as _tqdm
@@ -13,6 +15,20 @@ tqdm = partial(
     bar_format='{l_bar}{bar:25}{r_bar}{bar:-10b}'
 )
 ######################################
+
+def save_model(model, path):
+    directory = os.path.dirname(path)
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+    torch.save(model.state_dict(), path)
+    print("saved %s (%u parameters)" % (path, get_n_params(model)))
+
+
+def load_model(model, path):
+    model.load_state_dict(torch.load(path, map_location="cpu"))
+    model.eval()
+    return model
+
 
 def get_n_params(model):
     pp=0
@@ -70,7 +86,7 @@ def print_traindata_parameter(dataset_loader):
     print("-----------------------\n")
 
 def train(model, epochs, criterion, optimizer, data_loader):
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
     model.to(device)
     model.train()
     running_epoch_losses = []
@@ -90,6 +106,7 @@ def train(model, epochs, criterion, optimizer, data_loader):
             avg_epoch_loss = running_epoch_loss / running_epoch_count
             running_epoch_losses.append(avg_epoch_loss)
             pbar.set_postfix_str("Epoch: %u/%u Loss: %f" % (epoch + 1, epochs, avg_epoch_loss))
+    model.to("cpu")
     return running_epoch_losses
 
 def vector_to_slice(vec):

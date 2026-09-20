@@ -37,6 +37,7 @@ def deep_ae_param(): # fault, smaller window, more params, model
     optimizer = torch.optim.Adam(ae.parameters(), lr=0.001)
 
     losses = train(ae, 100, criterion, optimizer, loader)
+    save_model(ae, "models/daeparam_gtzh.pt")
 
     # TEST
     plt.plot(losses, linewidth=1.0)
@@ -104,6 +105,7 @@ def deep_ae_param_fault_test():
     optimizer = torch.optim.Adam(ae.parameters(), lr=0.001)
 
     losses = train(ae, 100, criterion, optimizer, loader)
+    save_model(ae, "models/daeparam_fhi.pt")
 
     # TEST
     plt.plot(losses, linewidth=1.0)

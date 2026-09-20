@@ -3,6 +3,7 @@ from scripts.conv_ae import *
 from scripts.conv_ae_amp_signals import *
 from scripts.deep_ae_param import *
 from scripts.convert_data_R import *
+from scripts.quantize_export import *
 
 if __name__ == "__main__":
     #deep_ae()

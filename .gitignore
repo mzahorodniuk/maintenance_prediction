@@ -2,7 +2,7 @@
 __pycache__/
 *.pyc
 .venv/
-
+.claude/
 # ---- GHDL / GTKWave build artifacts ----
 # NB: bitstream.bit, design.json and implementation.txt ARE tracked on purpose --
 # they are the shipped build products for the board.

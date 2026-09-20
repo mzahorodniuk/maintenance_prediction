@@ -233,25 +233,37 @@ error per axis) and `plot_slice_reconstruction_continuous(fps, ae, loader)`
 
 ---
 
-## 8. Known limitations
+## 8. FPGA deployment / quantization
+
+`DAEParam` is small enough (1,559 parameters) to target a real FPGA. See
+[`docs/quantization.md`](docs/quantization.md) for the full numeric-format
+study (bf16/fp16/int8-int16/MXFP8, verification methodology, and Artix-7
+resource assessment) targeting a Xilinx Artix-7 XC7A100T (Arty/Nexys A7-100T).
+Short version: use fixed point (`ap_fixed<12,2>` or `<16,2>`), not a float
+format — the model's values are bounded, so a float exponent buys nothing.
+
+`lib/utils.py`'s `save_model()` / `load_model()` persist a trained model's
+`state_dict()`; `scripts/quantize_export.py` trains, saves, and quantizes
+`DAEParam` to every format, writing each to `models/quantized/`.
+
+---
+
+## 9. Known limitations
 
 Worth knowing before building anything on top of this:
 
-1. **No model persistence.** Nothing calls `torch.save` / `load_state_dict`.
-   Every run retrains from scratch, and the trained weights are lost on exit.
-   Exporting weights is the first thing needed for any deployment.
-2. **Train/test overlap in the fault tests.** `deep_ae_param_fault_test` trains
+1. **Train/test overlap in the fault tests.** `deep_ae_param_fault_test` trains
    on FHI rides 1–7 and then scores FHI rides 1–10 — 7 of the 10 "healthy" test
    rides were seen during training. The healthy/faulty gap is large enough that
    the conclusion probably survives, but the healthy scores are optimistic.
    Rides 8, 9, 10 (0.777, 0.669, 0.631) are the only clean healthy numbers.
-3. **No fixed seed.** `torch.manual_seed` is never called, so numbers move
+2. **No fixed seed.** `torch.manual_seed` is never called, so numbers move
    between runs.
-4. **No threshold is ever computed.** The separation is read off the CSV by eye;
+3. **No threshold is ever computed.** The separation is read off the CSV by eye;
    there is no decision rule in code.
-5. **`plt.show()` blocks** in the middle of several experiments — the evaluation
+4. **`plt.show()` blocks** in the middle of several experiments — the evaluation
    loop only continues after you close the window.
-6. **Features are unnormalised** (see §4.1), and `z_score_slices` is commented
+5. **Features are unnormalised** (see §4.1), and `z_score_slices` is commented
    out of the raw-window paths.
-7. Single-window `Dataset`s rebuild the whole slice list in memory; a dense
+6. Single-window `Dataset`s rebuild the whole slice list in memory; a dense
    hop-1 evaluation of a 10 000-sample ride creates ~9 800 windows.

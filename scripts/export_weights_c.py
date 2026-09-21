@@ -111,21 +111,34 @@ def build(model_path=MODEL_PATH):
     return ae, layers, biases, L, scales, feats_q214, windows, tags
 
 
+def _rshift_round(v, shift):
+    """Round-half-away-from-zero arithmetic shift, matching the C:
+        v >= 0 : (v + half) >> shift
+        v <  0 : -((-v + half) >> shift)
+    Deliberately NOT np.round, which rounds half to even and would disagree
+    with the C on exact ties."""
+    half = 1 << (shift - 1)
+    return np.where(v >= 0, (v + half) >> shift, -((-v + half) >> shift))
+
+
+def in_scale_recip(scales):
+    """Q30 reciprocal that converts a Q2.14 feature into a layer-0 input code."""
+    return int(round((1.0 / scales[0]) / SCALE * (1 << 30)))
+
+
 def int_forward(feats_q214, L, scales):
     """Bit-exact simulation of the C datapath. Returns Q2.14 reconstruction
-    and the largest |accumulator| seen."""
-    h = np.clip(np.round(feats_q214.astype(np.float64) / SCALE / scales[0]),
-                -AQMAX, AQMAX).astype(np.int64)
+    and the largest |accumulator| seen. Pure integer throughout, so the C port
+    can be checked against it bit-for-bit."""
+    h = np.clip(_rshift_round(feats_q214.astype(np.int64) * in_scale_recip(scales), 30),
+                -AQMAX, AQMAX)
     accmax = 0
     for lay in L:
         acc = h @ lay["wc"].T + lay["bias_acc"][None, :]
         accmax = max(accmax, int(np.abs(acc).max()))
         if lay["relu"]:
             acc = np.maximum(acc, 0)
-        rnd = 1 << (REQUANT_SHIFT - 1)
-        h = np.where(acc >= 0,
-                     (acc * lay["mul"][None, :] + rnd) >> REQUANT_SHIFT,
-                     -((-acc * lay["mul"][None, :] + rnd) >> REQUANT_SHIFT))
+        h = _rshift_round(acc * lay["mul"][None, :], REQUANT_SHIFT)
         if lay is not L[-1]:
             h = np.clip(h, -AQMAX, AQMAX)
     return h, accmax
@@ -202,7 +215,7 @@ def export_weights_c(out_dir, model_path=MODEL_PATH, n_golden=8):
          "#define AE_ACT_QMAX      %d" % AQMAX,
          "#define AE_FEAT_SHIFT    %d   // features are Q2.14" % SHIFT,
          "#define AE_IN_SCALE_RECIP_Q30 %d  // round((1/s_in)/2^14 * 2^30)"
-         % int(round((1.0 / scales[0]) / SCALE * (1 << 30))), ""]
+         % in_scale_recip(scales), ""]
     for i, lay in enumerate(L):
         p.append("#define AE_L%d_IN   %d" % (i, lay["n_in"]))
         p.append("#define AE_L%d_OUT  %d" % (i, lay["n_out"]))

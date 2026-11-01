@@ -1,9 +1,9 @@
+from scripts.cpu_fp32 import export_onnx
 from scripts.deep_ae import *
 from scripts.conv_ae import *
 from scripts.conv_ae_amp_signals import *
-from scripts.deep_ae_param import *
+from scripts.train_fp32 import *
 from scripts.convert_data_R import *
-from scripts.quantize_export import *
 
 if __name__ == "__main__":
     #deep_ae()
@@ -16,4 +16,6 @@ if __name__ == "__main__":
 
 
     # deep_ae_param()
-    deep_ae_param_fault_test()
+    # deep_ae_param_fault_test()
+
+        

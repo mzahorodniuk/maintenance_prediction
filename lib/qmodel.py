@@ -15,7 +15,7 @@ the tools to disagree on exact ties.
     latent      int8, power-of-two scale, FLOOR            int8
     output      16 bit, scale 2^-14 (constant), FLOOR      Q2.14 recon
 
-Used by scripts/export_qonnx.py.
+Used by scripts/fpga_qonnx.py.
 """
 import torch.nn as nn
 

@@ -1,18 +1,17 @@
-"""Export DAEParam to ONNX as it is (fp32) and generate C with emx-onnx-cgen,
-for the Simply-V / RISC-V port: the fp32 baseline the quantized models
-(scripts/export_tvm.py) are compared against.
+"""CPU, fp32: PyTorch model -> ONNX -> C (emx-onnx-cgen).
 
-The model takes the 21 features as float (the Q2.14 fixed_features() of a
-window divided by 2^14, as the device computes them) and returns the 21
-reconstructed features as float.
+The plain float baseline that the quantized models (cpu_tvm.py) are compared with.
+Input: the 21 features as float (Q2.14 features / 2^14). Output: the 21
+reconstructed features.
 
-Writes into out_dir: daeparam_fp32.onnx and ae_model_fp32.c with
-  void ae_model_fp32(const float feat[1][21], float recon[1][21]).
-Prints the per-ride mean score (ONNX Runtime) to compare with the device.
+Writes into out_dir:
+  daeparam_fp32.onnx
+  ae_model_fp32.c    void ae_model_fp32(const float feat[1][21], float recon[1][21])
+Prints the per-ride mean score (ONNX Runtime).
 
-Usage:
-    from scripts.export_onnx import export_onnx
-    export_onnx("/home/misha/simplyv_ddr_nexys/sw/SoC/examples/ae_onnx/gen")
+Use:  make -C simplyv_ddr_nexys/sw/SoC/examples/ae_ride gen MODEL=onnx_fp32
+or    from scripts.cpu_fp32 import export_onnx
+      export_onnx("<out_dir>")
 """
 import os
 import shutil
@@ -26,7 +25,7 @@ import torch
 from lib.utils import load_model
 from lib.model import DAEParam
 from lib.fixed_features import fixed_features, to_fixed, SCALE
-from scripts.export_weights_c import MODEL_PATH, _all_windows
+from scripts.common import MODEL_PATH, _all_windows
 
 FORMATS = ("fp32",)
 

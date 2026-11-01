@@ -1,5 +1,5 @@
 """Integer forward pass of a power-of-two QONNX model (lib/qmodel.py exported by
-scripts/export_qonnx.py), with onnx and numpy only.
+scripts/fpga_qonnx.py), with onnx and numpy only.
 
 It is the reference the hardware generators check against: FINN, hls4ml and the
 RTL wrappers must give exactly these reconstructions. Every tensor is an int64
@@ -12,7 +12,7 @@ except where a Quant node says so:
     Relu                  max(code, 0)
 
 Input and output are the Q2.14 feature codes (int16 range, exponent -14).
-scripts/export_qonnx.py checks it against QONNX's own execution in float64.
+scripts/fpga_qonnx.py checks it against QONNX's own execution in float64.
 """
 import numpy as np
 import onnx

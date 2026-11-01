@@ -1,31 +1,23 @@
-"""Quantize DAEParam with Brevitas (lib/qmodel.py: power-of-two scales, FLOOR)
-and export it to QONNX, the input of the FPGA generators (FINN, hls4ml) of the
-RISC-V co-processor (~/riscv_co-processor_nexys, step 18).
+"""FPGA co-processor: Brevitas QAT -> QONNX, the input of FINN and hls4ml.
 
-Pipeline:
-    trained float weights -> QDAEParam -> calibration (PTQ)
-    -> quantization-aware training (QAT) -> export_qonnx -> qonnx cleanup
-
-QAT follows scripts/export_tvm.py (healthy FHI rides 1-7, window 208, step 104,
-MSE, Adam lr 1e-4, batch 64, 30 epochs, seed 0), single-threaded and with
-deterministic algorithms so a re-run gives the same weights.
+The model is lib/qmodel.py: power-of-two scales, zero point 0, FLOOR rounding.
+Steps: trained float weights -> calibration -> QAT -> QONNX export -> cleanup.
+QAT settings as in cpu_tvm.py, with a fixed seed and deterministic algorithms,
+so a re-run gives the same weights.
 
 Checks (any failure stops the export):
-  - every Quant node has a power-of-two scale and zero point 0, and every
-    activation rounds with FLOOR;
-  - lib/qonnx_int.py (integer codes) equals QONNX's own execution of the model
-    in float64 on the dataset and on random vectors (float32 accumulation is not
-    exact: 16 bit x 8 bit products summed 21 times exceed 2^24);
-  - the per-ride healthy/faulty separation holds.
+  - every scale is a power of two, every zero point 0, every rounding FLOOR;
+  - lib/qonnx_int.py (integer arithmetic) equals QONNX's own float64 result;
+  - healthy and faulty rides are still told apart.
 
 Writes into out_dir:
-  daeparam_fhi_w<W>a<A>.qonnx   the cleaned QONNX model
-  qat_state.pt                  the QAT checkpoint (QDAEParam state dict)
-  golden_w<W>a<A>.npz           Q2.14 features, recon and score of the dataset
-                                (with ride tags) and of random vectors
+  daeparam_fhi_w<W>a<A>.qonnx   the model
+  qat_state.pt                  QAT checkpoint
+  golden_w<W>a<A>.npz           features, reconstruction and score (dataset and random)
 
-Needs Brevitas and QONNX (the python3.10 venv ~/tvm-env), run from the repo root:
-    ~/tvm-env/bin/python -m scripts.export_qonnx --model models/daeparam_fhi.pt --out <dir>
+Needs Brevitas and QONNX (venv ~/tvm-env). From the repo root:
+    ~/tvm-env/bin/python -m scripts.fpga_qonnx --model models/daeparam_fhi.pt --out <dir>
+Used by ~/riscv_co-processor_nexys (step 18).
 """
 import argparse
 import os
@@ -41,7 +33,7 @@ from lib.model import DAEParam
 from lib.fixed_features import fixed_features, to_fixed, SCALE
 from lib.qmodel import QDAEParam
 from lib.qonnx_int import QonnxInt, score as int_score
-from scripts.export_weights_c import MODEL_PATH, _all_windows
+from scripts.common import MODEL_PATH, _all_windows
 
 QAT_EPOCHS, QAT_LR, QAT_BATCH = 30, 1e-4, 64
 N_RANDOM = 4096

@@ -1,3 +1,12 @@
+"""Train: the float (fp32) model DAEParam on healthy FHI rides.
+
+Produces models/daeparam_fhi.pt, the starting point of every other workflow
+(cpu_fp32.py, cpu_tvm.py, fpga_qonnx.py).
+
+    deep_ae_param()              train and plot
+    deep_ae_param_fault_test()   score every ride, healthy and faulty
+"""
+
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
